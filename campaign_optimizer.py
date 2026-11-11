@@ -23,7 +23,8 @@ class Channel:
 
 
 TOTAL_BUDGET = 2_800_000
-FIXED_COSTS = 600_000 + 2 * 268 * 750 + 10_000
+VOLUNTEER_COMMITMENT = (40 * 100 + 150 * 16) * 150
+FIXED_COSTS = 600_000 + 2 * 268 * 750 + 10_000 + VOLUNTEER_COMMITMENT
 VARIABLE_BUDGET = TOTAL_BUDGET - FIXED_COSTS
 ELECTORS = 242_000
 PERSUADABLE_POOL = 93_434
@@ -31,10 +32,11 @@ UNIQUE_REACH_FACTOR = Fraction(65, 100)
 OBJECTIVE_SCALE = 1_000_000
 
 # Door contacts are households; 121/39 is the case's 242,000 electors / 78,000
-# households. Repeat visits are modeled at half the stated door-persuasion rate.
+# households. Volunteer stipends are a committed budget line, not a per-visit
+# charge, so door-channel units have no additional cash cost in the optimizer.
 channels = [
-    Channel("door_first_household", 6, 121, 39, 15, 78_000),
-    Channel("door_repeat_household", 6, 121, 39, 15, 78_000),
+    Channel("door_first_household", 0, 121, 39, 15, 78_000),
+    Channel("door_repeat_household", 0, 121, 39, 15, 78_000),
     Channel("village_meeting", 6_000, 150, 1, 25, 354),
     Channel("shg_circle", 2_000, 35, 1, 30, 31_000 // 35),
     Channel("whatsapp_voter", 1, 1, 1, 3, ELECTORS * 52 // 100),
@@ -192,7 +194,10 @@ def optimize_campaign(
 def main() -> None:
     result = optimize_campaign()
     print(f"Solver status: {result['status']}")
-    print(f"Fixed costs: INR {result['fixed_costs']:,.0f}")
+    print(
+        "Fixed commitments (includes INR 960,000 volunteer/student stipends): "
+        f"INR {result['fixed_costs']:,.0f}"
+    )
     print(f"Optimized activity spend: INR {result['activity_spend']:,.0f}")
     print(f"Unused budget: INR {result['unused_budget']:,.0f}")
     print(f"Expected vote movements (model estimate): {result['expected_moves']:,.0f}")

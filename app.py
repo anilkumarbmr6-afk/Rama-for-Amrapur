@@ -119,7 +119,7 @@ def channel_table(result: dict) -> pd.DataFrame:
                 "Reach per unit (voters)": row["reach_per_unit"],
                 "Reach before overlap": reach,
                 "Cost per unit": row["unit_cost"],
-                "Spend": row["spend"],
+                "Incremental spend": row["spend"],
                 "Base case rate per 100": row["base_rate_percent"],
                 "Effective rate per 100": row["rate_percent"],
                 "Expected moves": row["expected_moves"],
@@ -150,10 +150,10 @@ with st.sidebar:
     with st.form("scenario_controls"):
         budget_lakh = st.slider(
             "Total campaign budget (₹ lakh)",
-            min_value=15.0,
+            min_value=FIXED_COSTS / 100_000,
             max_value=40.0,
             value=28.0,
-            step=0.5,
+            step=0.01,
             help="The case provides ₹28 lakh; the legal spending cap is ₹40 lakh.",
         )
         overlap_percent = st.slider(
@@ -291,6 +291,7 @@ with overview:
                 ("Office, vehicles, compliance", 600_000, lakh(600_000)),
                 ("Polling agents", 2 * 268 * 750, lakh(2 * 268 * 750)),
                 ("Nomination deposit", 10_000, lakh(10_000)),
+                ("Volunteer/student stipends", 960_000, lakh(960_000)),
                 ("Optimized field activities", activity_spend, lakh(activity_spend)),
                 ("Unused", result["unused_budget"], lakh(result["unused_budget"])),
             ],
@@ -333,7 +334,7 @@ with calculations:
                 f"{value:,.0f}"
                 if column in {"Units", "Reach before overlap"}
                 else f"{rupees(value)}"
-                if column in {"Cost per unit", "Spend"}
+                if column in {"Cost per unit", "Incremental spend"}
                 else str(value)
                 for column, value in row.items()
             ]
@@ -348,6 +349,10 @@ with calculations:
     )
 
     st.subheader("How each channel's vote estimate is calculated")
+    st.caption(
+        "The 6,400 volunteer/student days cost ₹9.60 lakh and are included in fixed "
+        "commitments; door-visit channels therefore show no additional cash spend."
+    )
     st.latex(
         r"\text{Expected moves} = "
         r"\text{units} \times \text{voters reached per unit} "
@@ -372,7 +377,8 @@ with calculations:
         reach_count = row["Reach before overlap"]
         st.write(
             f"**{row['Channel']}:** {unit_count:,} units × "
-            f"{rupees(row['Cost per unit'])} = {rupees(row['Spend'])}; "
+            f"{rupees(row['Cost per unit'])} per unit = "
+            f"{rupees(row['Incremental spend'])} incremental spend; "
             f"gross reach about {reach_count:,.0f}; "
             f"modeled moves about {row['Expected moves']:,.0f}."
         )
@@ -572,7 +578,8 @@ with assumptions:
 
         **Budget obligations:** ₹6.00 lakh office/vehicles/compliance
         + ₹4.02 lakh for 536 polling agents + ₹0.10 lakh nomination deposit
-        = **{lakh(FIXED_COSTS)} fixed costs**.
+        + ₹9.60 lakh for 6,400 volunteer/student days
+        = **{lakh(FIXED_COSTS)} fixed commitments**.
 
         **Persuadable pool derivation:** group valid votes ×
         (undecided share + 34% of PD share + 46% of LM share), summed across groups.
